@@ -1,22 +1,24 @@
 import discord, os
-
-
+from discord.ext import commands
 TOKEN = os.environ["DISCORD_TOKEN"]
 
-class MyClient(discord.Client):
-    async def on_ready(self):
-        print(f'Logged on as {self.user}!')
+bot = commands.Bot("!")
 
-    async def on_message(self, message):
+@bot.command()
+async def join(ctx):
+    author = ctx.author
+    chan = ctx.channel
+    await chan.send(f"{author} Joined!")
 
-        if message.author == client.user:
-            return
-        if message.content.startswith('!'):
-            command = message.content[1:].split(" ")
+@bot.command()
+async def remove(ctx):
+    author = ctx.author
+    chan = ctx.channel
+    await chan.send(f"{author} Removed!")
 
-            print(f'Message from {message.author}: {message.content}')
-            await message.channel.send(f'{",".join(command)}')
+@bot.event
+async def on_ready():
+    print("Time to fish!")
+    print("Logged in as: {}".format(bot.user.name))
 
-client = MyClient()
-client.run(TOKEN)
-
+bot.run(TOKEN)
