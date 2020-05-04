@@ -24,7 +24,7 @@ async def join(ctx, table=None):
 
     if table == None:
         await chan.send("Please pick a table name")
-
+        return
     if ret == 0:
         await chan.send(f"{player} joined table {table}")    
     elif ret == 3:
