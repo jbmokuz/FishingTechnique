@@ -188,7 +188,7 @@ class GameInstance(metaclass=Singleton):
         t = self.getTableName(name)
         if t != None:
             table = self.tables[t]
-            score = score.replace(" ","").split("+")
+            score = ' '.join(score.strip().split()).split(" ")
             try:
                 score[0] = int(score[0])
                 score[1] = int(score[1])
@@ -200,17 +200,26 @@ class GameInstance(metaclass=Singleton):
         return 1
         
 
-    def scoreTable(self, tableName, verbose=False):
+    def scoreTable(self, tableName, verbose=True):
         # Get the table
+        if not tableName in self.tables:
+            return f"{tableName} is not a table!"
         table = self.tables[tableName]
         scoreList = []
 
         # Make all the scores and player info into a list
         for player in table.players:
+            if table.players[player] == None:
+                return "Not all scores reported!"
             scoreList.append([player]+table.players[player])
 
+        # Check that the scores sum properly
         if sum([i[1] for i in scoreList]) != table.start*MAX_PLAYERS:
             return "Score does not sum to "+ str(table.start*MAX_PLAYERS)
+
+        # Check that the shugi sums properly
+        if sum([i[2] for i in scoreList]) != 0:
+            return "Shugi does not sum to 0"
             
 
         scoreList.sort(key=lambda x: x[1])
@@ -223,15 +232,13 @@ class GameInstance(metaclass=Singleton):
         ret = ""
         ret += f"Score for table {tableName}:\n"
         player, score, shugi  = scoreList[0]
+        oka = table.oka
 
-        calc = (((score+table.oka-table.target)/1000)+table.uma[0])*(table.rate*10)
-        if verbose:
-            ret += f"    ((({score}+{table.oka}-{table.target})/1000)+{table.uma[0]})*({table.rate}*10)\n"
-        ret += f"    {player}: {calc}\n"
-        for i, j in enumerate(scoreList[1:]):
-            player, score, shugi = j
-            calc = (((score-table.target)/1000)+table.uma[i])*(table.rate*10)
-            if verbose:            
-                ret += f"    ((({score}-{table.target})/1000)+{table.uma[0]})*({table.rate}*10)\n"
+        for i, j in enumerate(scoreList):
+            player, score, shugi  = j            
+            calc = ((((score+oka-table.target)/1000)+table.uma[i])*(table.rate*10)+(table.shugi*shugi))/10
+            if verbose:
+                ret += f"    (((({score}+{oka}-{table.target})/1000)+{table.uma[i]})*({table.rate}*10)+({table.shugi}*{shugi}))/10\n"
             ret += f"    {player}: {calc}\n"
+            oka = 0
         return ret
