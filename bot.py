@@ -70,16 +70,50 @@ async def list(ctx):
 
 
 @bot.command()
-async def report(ctx, score):
+async def report(ctx, score=None, shugi=None):
     """
     Report your catch!
+    Args:
+        Score:
+            How big your fish is
+        Shugi:
+            How many fish you caught???
     """
 
     player = ctx.author
     chan = ctx.channel
+
+    if score == None or shugi == None:
+        await chan.send("Not a properly formatted score!\nExample !report 35000 +2")
+        return
     
-    report(player, score)
-        
+    
+    ret = gi.report(player, score+" "+shugi)
+    if ret == 0:
+        await chan.send("Score reported")
+    elif ret == 1:
+        await chan.send(f"{player} is not at a table")
+    elif ret == 2:
+        await chan.send(f"{score} is not formated properly")
+    
+@bot.command()
+async def score(ctx, table, verbose=None):
+    """
+    See how big your fish are (results in cm)!
+    Args:
+        Table:
+            The table you want to score
+    """
+
+    player = ctx.author
+    chan = ctx.channel
+
+    if verbose != None:
+        ret = gi.scoreTable(table,True)
+    else:
+        ret = gi.scoreTable(table)        
+    await chan.send(f"{ret}")
+    
 @bot.event
 async def on_ready():
     print("Time to fish!")

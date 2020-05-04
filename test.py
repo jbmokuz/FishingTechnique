@@ -138,7 +138,7 @@ class TestScore(unittest.TestCase):
         self.gi.report("4","1 +0")
         print(self.gi.scoreTable("A"))
         self.gi.report("4","0 +0")
-        print("WORK",self.gi.scoreTable("A"))        
+        print(self.gi.scoreTable("A"))        
         self.gi.report("3","60000 +0")        
         self.gi.report("1","15000 -1")
         self.gi.report("2","25000 +2")

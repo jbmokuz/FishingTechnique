@@ -200,7 +200,7 @@ class GameInstance(metaclass=Singleton):
         return 1
         
 
-    def scoreTable(self, tableName, verbose=True):
+    def scoreTable(self, tableName, verbose=False):
         # Get the table
         if not tableName in self.tables:
             return f"{tableName} is not a table!"
@@ -236,9 +236,9 @@ class GameInstance(metaclass=Singleton):
 
         for i, j in enumerate(scoreList):
             player, score, shugi  = j            
-            calc = ((((score+oka-table.target)/1000)+table.uma[i])*(table.rate*10)+(table.shugi*shugi))/10
+            calc = ((((score+oka-table.target)/1000)+table.uma[i])*(table.rate*10)+(table.shugi*(shugi*10)))/10
             if verbose:
-                ret += f"    (((({score}+{oka}-{table.target})/1000)+{table.uma[i]})*({table.rate}*10)+({table.shugi}*{shugi}))/10\n"
+                ret += f"    (((({score}+{oka}-{table.target})/1000)+{table.uma[i]})×({table.rate}×10)+({table.shugi}×{shugi}×10))/10\n"
             ret += f"    {player}: {calc}\n"
             oka = 0
         return ret
