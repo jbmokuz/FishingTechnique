@@ -2,6 +2,7 @@ import discord, os
 from discord.ext import commands
 from functions import GameInstance
 from functions import MAX_PLAYERS
+from functions import TENGO,TENSAN,TENPIN
 
 TOKEN = os.environ["DISCORD_TOKEN"]
 
@@ -71,6 +72,7 @@ async def list(ctx):
     else:
         await chan.send(ret)
 
+@bot.command()
 async def set_rate(ctx, table=None, rate=None):
     """
     Change rate of a table
@@ -80,17 +82,21 @@ async def set_rate(ctx, table=None, rate=None):
         Rate:
           Current acceptable rates [tensan, tengo, tenpin]
     """
+    
+    player = ctx.author
+    chan = ctx.channel
+    
     if table == None or rate == None:
         await chan.send("usage: !set_rate [table] [rate]\nEx: !set_rate tableA tengo")
         return
     
     rate = rate.lower()
     if rate == "tensan":
-        ret = gi.setTableRate(table, gi.TENSAN)
+        ret = gi.setTableRate(table, TENSAN)
     elif rate == "tengo":
-        ret = gi.setTableRate(table, gi.TENGO)
+        ret = gi.setTableRate(table, TENGO)
     elif rate == "tenpin":
-        ret = gi.setTableRate(table, gi.TENPIN)
+        ret = gi.setTableRate(table, TENPIN)
     else:
          await chan.send(f"{rate} is not a valid rate")
          return
