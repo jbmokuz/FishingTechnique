@@ -20,22 +20,19 @@ async def join(ctx, table=None):
     player = ctx.author
     chan = ctx.channel
 
-    ret = gi.addTable(player, table)
-
     if table == None:
-        await chan.send("Please pick a table name")
+        await chan.send("usage: !join [table]\nEx: !join tableA")
         return
-    if ret == 0:
-        await chan.send(f"{player} joined table {table}")    
-    elif ret == 3:
-        ret = gi.getTableName(player)
-        await chan.send(f"{player} is already at table {ret}!")
-    elif ret == 4:
-        await chan.send(f"{table} already has {MAX_PLAYERS} players!")
+    
+    ret = gi.addTable(player, table)
+    if ret != 0:
+        await chan.send(gi.lastError)
+        return
+    await chan.send(f"{player} joined table {table}")    
 
 
 @bot.command()
-async def remove(ctx):
+async def leave(ctx):
     """
     Leave a pier!
     """
@@ -44,14 +41,14 @@ async def remove(ctx):
     chan = ctx.channel
 
     ret = gi.remove(player)
-    if ret == 0:
-        await chan.send(f"{player} Removed!")
-    elif ret == 1:
-        await chan.send(f"{player} is not at any tables!")
+    if ret != 0:
+        await chan.send(gi.lastError)
+        return
+    await chan.send(f"{player} left!")
 
-        
+
 @bot.command()
-async def list(ctx):        
+async def list(ctx):
     """
     Show who is fishing!
     """
@@ -60,15 +57,51 @@ async def list(ctx):
     chan = ctx.channel
 
     ret = ""
-    
+
     for t in gi.tables:
         ret += "Table "+t+":\n"
+        ret += str(gi.tables[t]) + "\n"
+        ret += "  Players:\n"
         for p in gi.tables[t].players:
+            
             ret += "    "+str(p)+"\n"
         ret += "\n"
-    await chan.send(ret)
+    if ret == "":
+        await chan.send("Currently no one is fishing")
+    else:
+        await chan.send(ret)
 
+async def set_rate(ctx, table=None, rate=None):
+    """
+    Change rate of a table
+    Args:
+        Table: 
+          Name of table
+        Rate:
+          Current acceptable rates [tensan, tengo, tenpin]
+    """
+    if table == None or rate == None:
+        await chan.send("usage: !set_rate [table] [rate]\nEx: !set_rate tableA tengo")
+        return
+    
+    rate = rate.lower()
+    if rate == "tensan":
+        ret = gi.setTableRate(table, gi.TENSAN)
+    elif rate == "tengo":
+        ret = gi.setTableRate(table, gi.TENGO)
+    elif rate == "tenpin":
+        ret = gi.setTableRate(table, gi.TENPIN)
+    else:
+         await chan.send(f"{rate} is not a valid rate")
+         return
 
+    if ret != 0:
+        await chan.send(gi.lastError)
+        return
+    await chan.send(f"{table} rate changed!")         
+        
+        
+        
 @bot.command()
 async def report(ctx, score=None, shugi=None):
     """
@@ -89,12 +122,10 @@ async def report(ctx, score=None, shugi=None):
     
     
     ret = gi.report(player, score+" "+shugi)
-    if ret == 0:
-        await chan.send("Score reported")
-    elif ret == 1:
-        await chan.send(f"{player} is not at a table")
-    elif ret == 2:
-        await chan.send(f"{score} is not formated properly")
+    if ret != 0:
+        await chan.send(gi.lastError)
+        return
+    await chan.send("Score reported")
     
 @bot.command()
 async def score(ctx, table, verbose=None):
@@ -112,6 +143,10 @@ async def score(ctx, table, verbose=None):
         ret = gi.scoreTable(table,True)
     else:
         ret = gi.scoreTable(table)        
+
+    if ret == 1:
+        await chan.send(gi.lastError)
+        return
     await chan.send(f"{ret}")
     
 @bot.event
@@ -133,6 +168,4 @@ async def on_error(event, *args, **kwargs):
     print("Exception traceback object:", traceback)
 
     
-    
-
 bot.run(TOKEN)
