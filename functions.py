@@ -1,6 +1,6 @@
 import random
 
-MAX_PLAYERS = 2 # WARNING NEVER EVER SET TO 3!
+MAX_PLAYERS = 4 # WARNING NEVER EVER SET TO 3!
 
 class Singleton(type):
     _instances = {}
@@ -195,9 +195,7 @@ class GameInstance(metaclass=Singleton):
             except:
                 return 2
             table.players[name] = score
-            if self.checkScores(table):
-                return 0
-        return 1
+        return 0
         
 
     def scoreTable(self, tableName, verbose=False):
