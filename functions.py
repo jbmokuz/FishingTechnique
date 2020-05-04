@@ -56,8 +56,6 @@ class Table():
         self.target = target
         self.start = start
         self.uma = uma
-        self.uma.sort()
-        self.uma = self.uma[::-1]
 
         # @TODO Check that uma = 0 and is ok for max players
         
