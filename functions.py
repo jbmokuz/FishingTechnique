@@ -1,6 +1,6 @@
 import random
 
-MAX_PLAYERS = 4 # WARNING NEVER EVER SET TO 3!
+MAX_PLAYERS = 2 # WARNING NEVER EVER SET TO 3!
 
 class Singleton(type):
     _instances = {}
@@ -204,7 +204,16 @@ class GameInstance(metaclass=Singleton):
         # Get the table
         if not tableName in self.tables:
             return f"{tableName} is not a table!"
+
         table = self.tables[tableName]
+        
+        if len(table.players) != MAX_PLAYERS:
+            return f"{len(table.players)} is not the correct number of players"
+        
+        for p in table.players:
+            if table.players[p] == None:
+                return f"{p} does not have a score reported"
+
         scoreList = []
 
         # Make all the scores and player info into a list
