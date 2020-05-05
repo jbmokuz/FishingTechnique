@@ -30,12 +30,12 @@ async def parse_log(ctx, log=None, rate="tensan"):
     
     for p in players:
         table.append([str(p.name),str(p.score),str(p.shugi),str(p.payout)])
-    colMax = [max([len(i) for i in c]) for c in zip(*table)]
+    #colMax = [max([len(i) for i in c]) for c in zip(*table)]
     ret = ""
-    for row in table:
-        for i,col in enumerate(colMax):
-            ret += row[i].ljust(col+6)
-        ret += "\n"
+    for col,row in enumerate(table):
+        ret += f"{row[col].ljust(8)}\t"
+        if (col + 1) % 4 == 0:
+            ret += "\n"
     await chan.send(ret)
     
 @bot.event
