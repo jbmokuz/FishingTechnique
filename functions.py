@@ -29,9 +29,10 @@ class TableRate():
     def __str__(self):
         return f"Rate: {self.rate}, Start: {self.start}, Target: {self.target}, Shugi: {self.shugi}, Oka: {self.oka}, Uma: {self.uma}"
 
-TENSAN = TableRate(rate=0.3, shugi=.50, target=30000, start=25000, uma=[30,10,-10,-30])
-TENGO = TableRate(rate=0.5, shugi=1, target=30000, start=25000, uma=[30,10,-10,-30])
-TENPIN = TableRate(rate=1, shugi=2, target=30000, start=25000, uma=[30,10,-10,-30])
+# default values rate=0.3, shugi=.50, target=30000, start=25000, uma=[30,10,-10,-30]    
+TENSAN = TableRate()
+TENGO = TableRate(rate=0.5, shugi=1)
+TENPIN = TableRate(rate=1, shugi=2)
 
 def parseGame(log, rate=TENSAN):
     xml = requests.get("http://tenhou.net/0/log/?"+log).text
