@@ -67,11 +67,11 @@ def scoreTable(players, tableRate):
     ret = ""
     players.sort(key=lambda x: x.score,reverse=True)
 
-    players[0].score += tableRate.oka # giving 1st place oka bonus
+    oka = [tableRate.oka,0,0,0] # giving 1st place oka bonus
     
     for i, p in enumerate(players):
         shugi = tableRate.shugi * p.shugi
-        calc = (((p.score - tableRate.target)/1000) + tableRate.uma[i]) * tableRate.rate + shugi
+        calc = (((p.score + oka[i] - tableRate.target)/1000) + tableRate.uma[i]) * tableRate.rate + shugi
         p.payout = round(calc,2)
         #p.calc = f"(((({p.score}+{oka}-{tableRate.target})/1000)+{tableRate.uma[i]})×({tableRate.rate}×10)+({tableRate.shugi}×{p.shugi}×10))/10\n"
         ret += f"{p.name}: {p.payout}\n"
