@@ -29,7 +29,7 @@ async def parse_log(ctx, log=None, rate="tensan"):
         players = parseGame(log, TENPIN)
     
     for p in players:
-        table.append([str(p.name),str(p.score),str(p.shugi),str(p.payout)])
+        table.append([str(p.name).ljust(10),str(p.score).ljust(10),str(p.shugi).ljust(10),str(p.payout).ljust(10)])
     colMax = [max([len(i) for i in c]) for c in zip(*table)]
     ret = ""
     for row in table:
