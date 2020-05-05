@@ -11,7 +11,7 @@ class Player():
         self.calc = ""
 
     def __str__(self):
-        return self.name+ " " + str(self.score) + " " + str(self.shugi)+ " "+str(self.payout)
+        return f"{self.name} {self.score} {self.shugi} {self.payout}"
 
 class TableRate():
     
