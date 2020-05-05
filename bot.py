@@ -10,12 +10,24 @@ TOKEN = os.environ["DISCORD_TOKEN"]
 bot = commands.Bot("!")
 
 @bot.command()
-async def parse_log(ctx, log=None, verbose=None):
+async def parse_log(ctx, log=None, rate="tensan"):
     player = ctx.author
     chan = ctx.channel
+
+    if log == None or rate == None:
+        await chan.send("usage: !parse_log [tenhou_log] [rate]\nEx: !parse_log 2020050308gm-0209-19713-4a1a192b tengo")
+        
     
     table = [["Name","Score","Shugi","Final"]]
-    players = parseGame(log)
+
+    rate = rate.lower()
+    if rate == "tensan":
+        players = parseGame(log, TENSAN)
+    elif rate == "tengo":
+        players = parseGame(log, TENGO)
+    elif rate == "tenpin":
+        players = parseGame(log, TENPIN)
+    
     for p in players:
         table.append([str(p.name),str(p.score),str(p.shugi),str(p.payout)])
     colMax = [max([len(i) for i in c]) for c in zip(*table)]

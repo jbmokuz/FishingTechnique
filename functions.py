@@ -33,7 +33,7 @@ TENSAN = TableRate(rate=0.3, shugi=.50, target=30000, start=25000, uma=[30,10,-1
 TENGO = TableRate(rate=0.5, shugi=1, target=30000, start=25000, uma=[30,10,-10,-30])
 TENPIN = TableRate(rate=1, shugi=2, target=30000, start=25000, uma=[30,10,-10,-30])
 
-def parseGame(log):
+def parseGame(log, rate=TENSAN):
     xml = requests.get("http://tenhou.net/0/log/?"+log).text
 
     def convertToName(s):
@@ -60,7 +60,7 @@ def parseGame(log):
             players[i].score = int(owari[i*2])*100
             players[i].shugi = int(owari[i*2+8])
 
-    return scoreTable(players, TENSAN)
+    return scoreTable(players, rate)
 
 def scoreTable(players, tableRate):
     
