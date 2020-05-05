@@ -18,7 +18,7 @@ class TableRate():
     def __init__(self, rate=0.3, shugi=.50, target=30000, start=25000, uma=[30,10,-10,-30]):
         self.rate = rate     
         self.shugi = shugi        
-        self.oka = (target - start) * MAX_PLAYERS
+        self.oka = (target - start) * 4
         self.target = target
         self.start = start
         self.uma = uma        
@@ -69,7 +69,7 @@ def scoreTable(players, tableRate):
 
     oka = tableRate.oka
     for i, p in enumerate(players):
-        calc = ((((p.score+oka-tableRate.target)/1000)+tableRate.uma[i])*(tableRate.rate*10)+(tableRate.shugi*(p.shugi*10)))/10
+        calc = round(((((p.score+oka-tableRate.target)/1000)+tableRate.uma[i])*(tableRate.rate*10)+(tableRate.shugi*(p.shugi*10)))/10,2)
         p.payout = calc
         p.calc = f"(((({p.score}+{oka}-{tableRate.target})/1000)+{tableRate.uma[i]})×({tableRate.rate}×10)+({tableRate.shugi}×{p.shugi}×10))/10\n"
         ret += f"{p.name}: {calc}\n"
