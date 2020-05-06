@@ -18,7 +18,7 @@ async def parse_log(ctx, log=None, rate="tensan"):
         await chan.send("usage: !parse_log [tenhou_log] [rate]\nEx: !parse_log 2020050308gm-0209-19713-4a1a192b tengo")
         
     
-    table = [["Name","Score","Shugi","Final"]]
+    table = [["Score","","Pay","Name"]]
 
     rate = rate.lower()
     if rate == "tensan":
@@ -29,13 +29,25 @@ async def parse_log(ctx, log=None, rate="tensan"):
         players = parseGame(log, TENPIN)
     
     for p in players:
-        table.append([str(p.name),str(p.score),str(p.shugi),str(p.payout)])
+        score = str(p.score/1000)
+        shugi = str(p.shugi)
+        payout = str(p.payout)
+        if not "-" in score:
+            score = "+"+score
+        if not "-" in shugi:
+            shugi = "+"+shugi
+        if not "-" in payout:
+            payout = "+"+payout       
+        table.append([str(score),str(shugi),str(payout),str(p.name)])
+
     colMax = [max([len(i) for i in c]) for c in zip(*table)]
-    ret = ""
+    colMax[-1] = 0
+    ret = "```\n"
     for row in table:
         for i,col in enumerate(colMax):
-            ret += row[i].ljust(col+6)
+            ret += row[i].ljust(col+1)
         ret += "\n"
+    ret += "```"
     await chan.send(ret)
     
 @bot.event
