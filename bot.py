@@ -10,12 +10,12 @@ TOKEN = os.environ["DISCORD_TOKEN"]
 bot = commands.Bot("!")
 
 @bot.command()
-async def parse_log(ctx, log=None, rate="tensan"):
+async def score(ctx, log=None, rate="tensan"):
     player = ctx.author
     chan = ctx.channel
 
     if log == None or rate == None:
-        await chan.send("usage: !parse_log [tenhou_log] [rate]\nEx: !parse_log 2020050308gm-0209-19713-4a1a192b tengo")
+        await chan.send("usage: !score [tenhou_log] [rate]\nEx: !score https://tenhou.net/0/?log=2020051313gm-0209-19713-10df4ad2&tw=1 tengo")
         
     
     table = [["Score","","Pay","Name"]]
