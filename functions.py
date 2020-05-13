@@ -35,7 +35,11 @@ TENGO = TableRate(rate=0.5, shugi=1)
 TENPIN = TableRate(rate=1, shugi=2)
 
 def parseGame(log, rate=TENSAN):
+
+    if "https://" in log.lower():
+        log = log.split("=")[1].split("&")[0]
     xml = requests.get("http://tenhou.net/0/log/?"+log).text
+    print("Prasing http://tenhou.net/0/log/?"+log)
 
     def convertToName(s):
         ret = bytes()
@@ -46,20 +50,23 @@ def parseGame(log, rate=TENSAN):
     players = [Player() for i in range(4)]
 
     root = ET.fromstring(xml)
-    for type_tag in root.findall('UN'):
-        players[0].name = convertToName(type_tag.get('n0'))
-        players[1].name = convertToName(type_tag.get('n1'))
-        players[2].name = convertToName(type_tag.get('n2'))
-        players[3].name = convertToName(type_tag.get('n3'))
+
+    type_tag = root.find('UN')
+    players[0].name = convertToName(type_tag.get('n0'))
+    players[1].name = convertToName(type_tag.get('n1'))
+    players[2].name = convertToName(type_tag.get('n2'))
+    players[3].name = convertToName(type_tag.get('n3'))
 
     for type_tag in root.findall('AGARI'):
         owari = type_tag.get("owari")
         if owari == None:
             continue
-        owari = owari.split(",")        
+        owari = owari.split(",")
+        # @TODO check if there is shugi
         for i in range(0,4):
             players[i].score = int(owari[i*2])*100
             players[i].shugi = int(owari[i*2+8])
+        break
 
     return scoreTable(players, rate)
 

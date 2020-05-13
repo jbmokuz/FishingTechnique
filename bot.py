@@ -21,11 +21,11 @@ async def parse_log(ctx, log=None, rate="tensan"):
     table = [["Score","","Pay","Name"]]
 
     rate = rate.lower()
-    if rate == "tensan":
+    if rate == "tensan" or rate == "0.3" or rate == ".3":
         players = parseGame(log, TENSAN)
-    elif rate == "tengo":
+    elif rate == "tengo" or rate == "0.5" or rate == ".5":
         players = parseGame(log, TENGO)
-    elif rate == "tenpin":
+    elif rate == "tenpin" or rate == "1.0":
         players = parseGame(log, TENPIN)
     
     for p in players:
