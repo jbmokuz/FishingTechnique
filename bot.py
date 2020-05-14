@@ -1,16 +1,116 @@
 import discord, os
 from discord.ext import commands
 from functions import parseGame, scoreTable
-from functions import TENGO,TENSAN,TENPIN
+from functions import *
 import requests, sys
 import xml.etree.ElementTree as ET
+
+
 
 TOKEN = os.environ["DISCORD_TOKEN"]
 
 bot = commands.Bot("!")
+gi = GameInstance()
+
+
+@bot.command()
+async def join(ctx):
+    """
+    Join a list to wait for fishing!
+    """
+
+    player = ctx.author
+    chan = ctx.channel
+
+    ret = gi.addWaiting(player)
+    if ret != 0:
+        await chan.send(gi.lastError)
+        return
+    await chan.send(f"{player} joined the waiting to fish list!")
+
+
+@bot.command()
+async def leave(ctx):
+    """
+    Leave the waiting to fish list :(
+    """
+
+    player = ctx.author
+    chan = ctx.channel
+
+    ret = gi.removeWaiting(player)
+    if ret != 0:
+        await chan.send(gi.lastError)
+        return
+    await chan.send(f"{player} left the waiting to fish list!")
+
+
+@bot.command()
+async def clear(ctx):
+    """
+    Clear waiting to fish list
+    """
+    
+    player = ctx.author
+    chan = ctx.channel
+    
+    gi.reset()
+    await chan.send(f"Cleared!")
+
+@bot.command()
+async def shuffle(ctx):
+    """
+    Assine fishers to piers!
+    """
+    player = ctx.author
+    chan = ctx.channel
+    
+    tableD = gi.shuffle()
+
+    
+    if tableD == {}:
+        await chan.send("Not piers could be made!")
+    else:
+        ret = ""
+        for table in tableD:
+            ret += f"Pier {table}:\n"
+            for player in tableD[table]:
+                ret += "  "+str(player)+"\n"
+            ret += "\n"
+        await chan.send(ret)
+
+    
+@bot.command()
+async def list(ctx):
+    """
+    Show who is looking to fish!
+    """
+
+    player = ctx.author
+    chan = ctx.channel
+
+    ret = ""
+
+    if gi.waiting == []:
+        await chan.send("Currently no one is waiting to fish")
+    else:
+        for p in gi.waiting:
+            ret += str(p) + "\n"
+        await chan.send(ret)
+
 
 @bot.command()
 async def score(ctx, log=None, rate="tensan"):
+    """
+    Score a fishing log! (Results in cm)
+    Args:
+        log:
+            A full url or just the log id
+        rate (optional):
+            tensan(default), tengo, or tensan
+    """
+
+    
     player = ctx.author
     chan = ctx.channel
 
