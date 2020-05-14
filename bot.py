@@ -137,11 +137,11 @@ async def score(ctx, log=None, rate="tensan"):
         players = parseGame(log, TENPIN)
     
     for p in players:
-        score = str(p.score/1000)
+        score = str(p.score)
         shugi = str(p.shugi)
         payout = str(p.payout)
-        if not "-" in score:
-            score = "+"+score
+        #if not "-" in score:
+        #    score = "+"+score
         if not "-" in shugi:
             shugi = "+"+shugi
         if not "-" in payout:
