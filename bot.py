@@ -1,11 +1,8 @@
 import discord, os
 from discord.ext import commands
-from functions import parseGame, scoreTable
 from functions import *
 import requests, sys
 import xml.etree.ElementTree as ET
-
-
 
 TOKEN = os.environ["DISCORD_TOKEN"]
 

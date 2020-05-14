@@ -88,7 +88,7 @@ TENPIN = TableRate(rate=1, shugi=2)
 
 def parseGame(log, rate=TENSAN):
 
-    if "https://" in log.lower():
+    if "https://" in log.lower() or "http://":
         log = log.split("=")[1].split("&")[0]
     xml = requests.get("http://tenhou.net/0/log/?"+log).text
     print("Prasing http://tenhou.net/0/log/?"+log)
