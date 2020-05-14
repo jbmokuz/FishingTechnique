@@ -11,6 +11,17 @@ gi = GameInstance()
 
 
 @bot.command()
+async def ping(ctx):
+    """
+    Join a list to wait for fishing!
+    """
+
+    player = ctx.author
+    chan = ctx.channel
+    await chan.send(f"pong")
+
+
+@bot.command()
 async def join(ctx):
     """
     Join a list to wait for fishing!
@@ -104,7 +115,7 @@ async def score(ctx, log=None, rate="tensan"):
         log:
             A full url or just the log id
         rate (optional):
-            tensan(default), tengo, or tensan
+            tensan(default), tengo, or tenpin
     """
 
     

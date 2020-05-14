@@ -115,6 +115,8 @@ def parseGame(log, rate=TENSAN):
             continue
         owari = owari.split(",")
         # @TODO check if there is shugi
+        if len(owari) >= 8:
+            owari += [0,0,0,0,0,0,0,0]
         for i in range(0,4):
             players[i].score = int(owari[i*2])*100
             players[i].shugi = int(owari[i*2+8])
