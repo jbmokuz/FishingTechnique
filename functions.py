@@ -2,6 +2,14 @@ import random
 import requests
 import xml.etree.ElementTree as ET
 
+class Singleton(type):
+    _instances = {}
+    
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
 class Player():
     def __init__(self):
         self.name = None
@@ -12,6 +20,50 @@ class Player():
 
     def __str__(self):
         return f"{self.name} {self.score} {self.shugi} {self.payout}"
+
+
+
+class GameInstance(metaclass=Singleton):
+    
+    def __init__(self):
+        self.MAX_PLAYERS = 4 # WARNING NEVER EVER SET TO 3!
+        self.waiting = []
+        self.pWaiting = [] # Priority waiting
+        self.lastError = ""
+
+    def reset(self):
+        self.waiting = []
+        self.pWaiting = []         
+        self.lastError = ""
+        
+    def addWaiting(self, name):
+        if name in self.waiting or name in self.pWaiting:
+            self.lastError = f"{name} is already waiting"
+            return 1
+        self.waiting.append(name)
+        return 0
+        
+    def removeWaiting(self, name):
+        if name in self.waiting or name in self.pWaiting:
+            self.waiting.remove(name)
+            return 0
+        self.lastError = f"{name} is not currently waiting"
+        return 1
+
+    def shuffle(self):
+        ret = {}        
+        if len(self.waiting) >= self.MAX_PLAYERS:
+            random.shuffle(self.waiting)
+            while(len(self.waiting) >= self.MAX_PLAYERS):
+                count = 0
+                while(count in ret.keys()):
+                    count += 1
+                if not count in ret:
+                    ret[count] = []
+                for i in range(self.MAX_PLAYERS):
+                    ret[count].append(self.waiting.pop())
+        return ret
+
 
 class TableRate():
     
@@ -72,7 +124,6 @@ def parseGame(log, rate=TENSAN):
 
 def scoreTable(players, tableRate):
     
-    ret = ""
     players.sort(key=lambda x: x.score,reverse=True)
 
     oka = [tableRate.oka,0,0,0] # giving 1st place oka bonus
@@ -82,7 +133,6 @@ def scoreTable(players, tableRate):
         calc = (((p.score + oka[i] - tableRate.target)/1000) + tableRate.uma[i]) * tableRate.rate + shugi
         p.payout = round(calc,2)
         #p.calc = f"(((({p.score}+{oka}-{tableRate.target})/1000)+{tableRate.uma[i]})×({tableRate.rate}×10)+({tableRate.shugi}×{p.shugi}×10))/10\n"
-        ret += f"{p.name}: {p.payout}\n"
         
     return players
 
