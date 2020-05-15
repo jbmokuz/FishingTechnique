@@ -1,6 +1,6 @@
 import random
-
-MAX_PLAYERS = 4 # WARNING NEVER EVER SET TO 3!
+import requests
+import xml.etree.ElementTree as ET
 
 class Singleton(type):
     _instances = {}
@@ -10,13 +10,67 @@ class Singleton(type):
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
 
+class Player():
+    def __init__(self):
+        self.name = None
+        self.score = None
+        self.shugi = None
+        self.payout = None
+        self.calc = ""
+
+    def __str__(self):
+        return f"{self.name} {self.score} {self.shugi} {self.payout}"
+
+
+
+class GameInstance(metaclass=Singleton):
+    
+    def __init__(self):
+        self.MAX_PLAYERS = 4 # WARNING NEVER EVER SET TO 3!
+        self.waiting = []
+        self.pWaiting = [] # Priority waiting
+        self.lastError = ""
+
+    def reset(self):
+        self.waiting = []
+        self.pWaiting = []         
+        self.lastError = ""
+        
+    def addWaiting(self, name):
+        if name in self.waiting or name in self.pWaiting:
+            self.lastError = f"{name} is already waiting"
+            return 1
+        self.waiting.append(name)
+        return 0
+        
+    def removeWaiting(self, name):
+        if name in self.waiting or name in self.pWaiting:
+            self.waiting.remove(name)
+            return 0
+        self.lastError = f"{name} is not currently waiting"
+        return 1
+
+    def shuffle(self):
+        ret = {}        
+        if len(self.waiting) >= self.MAX_PLAYERS:
+            random.shuffle(self.waiting)
+            while(len(self.waiting) >= self.MAX_PLAYERS):
+                count = 0
+                while(count in ret.keys()):
+                    count += 1
+                if not count in ret:
+                    ret[count] = []
+                for i in range(self.MAX_PLAYERS):
+                    ret[count].append(self.waiting.pop())
+        return ret
+
 
 class TableRate():
     
-    def __init__(self, rate=0.3, shugi=.50, oka=20000, target=30000, start=25000, uma=[30,10,-10,-30]):
+    def __init__(self, rate=0.3, shugi=.50, target=30000, start=25000, uma=[30,10,-10,-30]):
         self.rate = rate     
         self.shugi = shugi        
-        self.oka = oka
+        self.oka = (target - start) * 4
         self.target = target
         self.start = start
         self.uma = uma        
@@ -27,161 +81,61 @@ class TableRate():
     def __str__(self):
         return f"Rate: {self.rate}, Start: {self.start}, Target: {self.target}, Shugi: {self.shugi}, Oka: {self.oka}, Uma: {self.uma}"
 
-TENSAN = TableRate(rate=0.3, shugi=.50, oka=20000, target=30000, start=25000, uma=[30,10,-10,-30])
-TENGO = TableRate(rate=0.5, shugi=1, oka=20000, target=30000, start=25000, uma=[30,10,-10,-30])
-TENPIN = TableRate(rate=1, shugi=2, oka=20000, target=30000, start=25000, uma=[30,10,-10,-30])
+# default values rate=0.3, shugi=.50, target=30000, start=25000, uma=[30,10,-10,-30]    
+TENSAN = TableRate()
+TENGO = TableRate(rate=0.5, shugi=1)
+TENPIN = TableRate(rate=1, shugi=2)
 
-class Table():
+def parseGame(log, rate=TENSAN):
+
+    if "https://" in log.lower() or "http://" in log.lower():
+        log = log.split("=")[1].split("&")[0]
+    xml = requests.get("http://tenhou.net/0/log/?"+log).text
+    print("Prasing http://tenhou.net/0/log/?"+log)
+
+    def convertToName(s):
+        ret = bytes()
+        for c in s.split("%")[1:]:
+            ret +=  int(c,16).to_bytes(1,"little")
+        return ret.decode("utf-8")
+
+    players = [Player() for i in range(4)]
+
+    root = ET.fromstring(xml)
+
+    type_tag = root.find('UN')
+    players[0].name = convertToName(type_tag.get('n0'))
+    players[1].name = convertToName(type_tag.get('n1'))
+    players[2].name = convertToName(type_tag.get('n2'))
+    players[3].name = convertToName(type_tag.get('n3'))
+
+    for type_tag in root.findall('AGARI'):
+        owari = type_tag.get("owari")
+        if owari == None:
+            continue
+        owari = owari.split(",")
+        # @TODO check if there is shugi
+        if len(owari) >= 8:
+            owari += [0,0,0,0,0,0,0,0]
+        for i in range(0,4):
+            players[i].score = int(owari[i*2])*100
+            players[i].shugi = int(owari[i*2+8])
+        break
+
+    return scoreTable(players, rate)
+
+def scoreTable(players, tableRate):
     
-    def __init__(self, players=[], tableRate=TENSAN):
-        self.players = {}        
-        self.tableRate = tableRate
+    players.sort(key=lambda x: x.score,reverse=True)
 
-        for p in players:
-            self.players[p] = None
-
-    def __str__(self):
-        ret = f"""    rate: {self.tableRate.rate}, start: {self.tableRate.start}, target: {self.tableRate.target},
-    shugi: {self.tableRate.shugi}, oka: {self.tableRate.oka}, uma: {self.tableRate.uma}"""
-        return ret
-
-            
-class GameInstance(metaclass=Singleton):
+    oka = [tableRate.oka,0,0,0] # giving 1st place oka bonus
     
-    def __init__(self):
-        self.waiting = []
-        self.tables = {}
-        self.players_d = {}
-        self.lastError = ""
-
-    def reset(self):
-        self.waiting = []
-        self.tables = {}
-        self.players_d = {}
-        self.lastError = ""
-
-    # This is used to get the table a player is playing at
-    def getTableName(self, name):
-        for t in self.tables:
-            if name in self.tables[t].players:
-                    return t
-        return None
-
-    # Add a player to a table/waiting
-    def addTable(self, name, table, rate=TENSAN):
-
-        # The player is already at a table!
-        if self.getTableName(name) != None:
-            self.lastError = f"Player: {name} already at table: {self.getTableName(name)}"
-            return 1
-
-        # Add the player to a table
-        else:
-            # Make the table if it is not one already
-            if not table in self.tables:
-                self.tables[table] = Table(tableRate=rate)
-
-            if rate != self.tables[table].tableRate:
-                self.lastError = f"Rate missmatch\n Table: {self.tables[table].tableRate}\n New  : {rate}"
-                return 1
-
-
-            # There are already 4 players at this table
-            if len(self.tables[table].players) >= MAX_PLAYERS:
-                self.lastError = f"Already have {MAX_PLAYERS} at table"
-                return 1
-
-            # The None is to track the result
-            if not name in self.tables[table].players:
-                self.tables[table].players[name] = None
-                
-        return 0
-
-    def remove(self, name):
-        ret = self.getTableName(name)
-        if ret == None:
-            self.lastError = f"Player: {name} currently not at any table"
-            return 1
-        del(self.tables[ret].players[name])
-        if self.tables[ret].players == {}:
-            del(self.tables[ret])
-        return 0
-    
-    def report(self, name, score):
-        t = self.getTableName(name)
-        if t != None:
-            table = self.tables[t]
-            score = ' '.join(score.strip().split()).split(" ")
-            try:
-                score[0] = int(score[0])
-                score[1] = int(score[1])
-            except:
-                self.lastError = f"Invalid format {score}"
-                return 1
-            table.players[name] = score
-            return 0
-        self.lastError = f"Player: {name} is not currently at a table"
-        return 1
+    for i, p in enumerate(players):
+        shugi = tableRate.shugi * p.shugi
+        calc = (((p.score + oka[i] - tableRate.target)/1000) + tableRate.uma[i]) * tableRate.rate + shugi
+        p.payout = round(calc,2)
+        #p.calc = f"(((({p.score}+{oka}-{tableRate.target})/1000)+{tableRate.uma[i]})×({tableRate.rate}×10)+({tableRate.shugi}×{p.shugi}×10))/10\n"
         
-    def setTableRate(self, tableName, rate):
-        if not tableName in self.tables:
-            self.lastError = f"{tableName} is not a table"
-            return 1
-        if type(rate) != type(TENSAN):
-            self.lastError = f"Not a valid rate"
-            return 1
-        self.tables[tableName].tableRate = rate
-        return 0
-        
-    def scoreTable(self, tableName, verbose=False):
-        # Get the table
-        if not tableName in self.tables:
-            self.lastError = f"{tableName} is not a table"
-            return 1
-
-        table = self.tables[tableName]
-        
-        if len(table.players) != MAX_PLAYERS:
-            self.lastError = f"{len(table.players)} is not the correct number of players"
-            return 1
-
-        scoreList = []
+    return players
 
 
-        # Make all the scores and player info into a list        
-        for player in table.players:
-            if table.players[player] == None:
-                self.LastError = f"{player} does not have a score reported"
-                return 1
-            scoreList.append([player]+table.players[player])
-
-        # Check that the scores sum properly
-        if sum([i[1] for i in scoreList]) != table.tableRate.start*MAX_PLAYERS:
-            self.lastError = "Score does not sum to "+ str(table.tableRate.start*MAX_PLAYERS)
-            return 1
-
-        # Check that the shugi sums properly
-        if sum([i[2] for i in scoreList]) != 0:
-            self.lastError =  "Shugi does not sum to 0"
-            return 1
-            
-        scoreList.sort(key=lambda x: x[1])
-        scoreList = scoreList[::-1]
-
-        # Show table rules
-        ret = ""
-        if verbose:        
-            ret += "TABLE"+" "+tableName+str(table)
-        
-        ret += f"Score for table {tableName}:\n"
-        player, score, shugi  = scoreList[0]
-        oka = table.tableRate.oka
-
-        for i, j in enumerate(scoreList):
-            player, score, shugi  = j            
-            calc = ((((score+oka-table.tableRate.target)/1000)+table.tableRate.uma[i])*(table.tableRate.rate*10)+(table.tableRate.shugi*(shugi*10)))/10
-            if verbose:
-                ret += f"    (((({score}+{oka}-{table.tableRate.target})/1000)+{table.tableRate.uma[i]})×({table.tableRate.rate}×10)+({table.tableRate.shugi}×{shugi}×10))/10\n"
-            ret += f"    {player}: {calc}\n"
-            oka = 0
-        return ret

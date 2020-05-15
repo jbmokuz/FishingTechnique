@@ -1,56 +1,97 @@
 import discord, os
 from discord.ext import commands
-from functions import GameInstance
-from functions import MAX_PLAYERS
+from functions import *
+import requests, sys
+import xml.etree.ElementTree as ET
 
 TOKEN = os.environ["DISCORD_TOKEN"]
 
 bot = commands.Bot("!")
 gi = GameInstance()
 
+
 @bot.command()
-async def join(ctx, table=None):
+async def ping(ctx):
     """
-    Join a pier to fish at!
-    Args:
-        pier:
-            The name of the pier you want to join
+    Join a list to wait for fishing!
     """
-    
+
+    player = ctx.author
+    chan = ctx.channel
+    await chan.send(f"pong")
+
+
+@bot.command()
+async def join(ctx):
+    """
+    Join a list to wait for fishing!
+    """
+
     player = ctx.author
     chan = ctx.channel
 
-    if table == None:
-        await chan.send("usage: !join [table]\nEx: !join tableA")
-        return
-    
-    ret = gi.addTable(player, table)
+    ret = gi.addWaiting(player)
     if ret != 0:
         await chan.send(gi.lastError)
         return
-    await chan.send(f"{player} joined table {table}")    
+    await chan.send(f"{player} joined the waiting to fish list!")
 
 
 @bot.command()
 async def leave(ctx):
     """
-    Leave a pier!
+    Leave the waiting to fish list :(
     """
 
     player = ctx.author
     chan = ctx.channel
 
-    ret = gi.remove(player)
+    ret = gi.removeWaiting(player)
     if ret != 0:
         await chan.send(gi.lastError)
         return
-    await chan.send(f"{player} left!")
+    await chan.send(f"{player} left the waiting to fish list!")
 
 
 @bot.command()
+async def clear(ctx):
+    """
+    Clear waiting to fish list
+    """
+    
+    player = ctx.author
+    chan = ctx.channel
+    
+    gi.reset()
+    await chan.send(f"Cleared!")
+
+@bot.command()
+async def shuffle(ctx):
+    """
+    Assign fishers to piers!
+    """
+    player = ctx.author
+    chan = ctx.channel
+    
+    tableD = gi.shuffle()
+
+    
+    if tableD == {}:
+        await chan.send("Not piers could be made!")
+    else:
+        ret = ""
+        for table in tableD:
+            ret += f"Pier {table}:\n"
+            for player in tableD[table]:
+                ret += "  "+str(player)+"\n"
+            ret += "\n"
+        await chan.send(ret)
+
+    
+@bot.command()
 async def list(ctx):
     """
-    Show who is fishing!
+    Show who is looking to fish!
     """
 
     player = ctx.author
@@ -58,96 +99,64 @@ async def list(ctx):
 
     ret = ""
 
-    for t in gi.tables:
-        ret += "Table "+t+":\n"
-        ret += str(gi.tables[t]) + "\n"
-        ret += "  Players:\n"
-        for p in gi.tables[t].players:
-            
-            ret += "    "+str(p)+"\n"
-        ret += "\n"
-    if ret == "":
-        await chan.send("Currently no one is fishing")
+    if gi.waiting == []:
+        await chan.send("Currently no one is waiting to fish")
     else:
+        for p in gi.waiting:
+            ret += str(p) + "\n"
         await chan.send(ret)
 
-async def set_rate(ctx, table=None, rate=None):
+
+@bot.command()
+async def score(ctx, log=None, rate="tensan"):
     """
-    Change rate of a table
+    Score a fishing log! (Results in cm)
     Args:
-        Table: 
-          Name of table
-        Rate:
-          Current acceptable rates [tensan, tengo, tenpin]
+        log:
+            A full url or just the log id
+        rate (optional):
+            tensan(default), tengo, or tenpin
     """
-    if table == None or rate == None:
-        await chan.send("usage: !set_rate [table] [rate]\nEx: !set_rate tableA tengo")
-        return
+
     
+    player = ctx.author
+    chan = ctx.channel
+
+    if log == None or rate == None:
+        await chan.send("usage: !score [tenhou_log] [rate]\nEx: !score https://tenhou.net/0/?log=2020051313gm-0209-19713-10df4ad2&tw=1 tengo")
+        
+    
+    table = [["Score","","Pay","Name"]]
+
     rate = rate.lower()
-    if rate == "tensan":
-        ret = gi.setTableRate(table, gi.TENSAN)
-    elif rate == "tengo":
-        ret = gi.setTableRate(table, gi.TENGO)
-    elif rate == "tenpin":
-        ret = gi.setTableRate(table, gi.TENPIN)
-    else:
-         await chan.send(f"{rate} is not a valid rate")
-         return
-
-    if ret != 0:
-        await chan.send(gi.lastError)
-        return
-    await chan.send(f"{table} rate changed!")         
-        
-        
-        
-@bot.command()
-async def report(ctx, score=None, shugi=None):
-    """
-    Report your catch!
-    Args:
-        Score:
-            How big your fish is
-        Shugi:
-            How many fish you caught???
-    """
-
-    player = ctx.author
-    chan = ctx.channel
-
-    if score == None or shugi == None:
-        await chan.send("Not a properly formatted score!\nExample !report 35000 +2")
-        return
+    if rate == "tensan" or rate == "0.3" or rate == ".3":
+        players = parseGame(log, TENSAN)
+    elif rate == "tengo" or rate == "0.5" or rate == ".5":
+        players = parseGame(log, TENGO)
+    elif rate == "tenpin" or rate == "1.0":
+        players = parseGame(log, TENPIN)
     
-    
-    ret = gi.report(player, score+" "+shugi)
-    if ret != 0:
-        await chan.send(gi.lastError)
-        return
-    await chan.send("Score reported")
-    
-@bot.command()
-async def score(ctx, table, verbose=None):
-    """
-    See how big your fish are (results in cm)!
-    Args:
-        Table:
-            The table you want to score
-    """
+    for p in players:
+        score = str(p.score)
+        shugi = str(p.shugi)
+        payout = str(p.payout)
+        #if not "-" in score:
+        #    score = "+"+score
+        if not "-" in shugi:
+            shugi = "+"+shugi
+        if not "-" in payout:
+            payout = "+"+payout       
+        table.append([str(score),str(shugi),str(payout),str(p.name)])
 
-    player = ctx.author
-    chan = ctx.channel
-
-    if verbose != None:
-        ret = gi.scoreTable(table,True)
-    else:
-        ret = gi.scoreTable(table)        
-
-    if ret == 1:
-        await chan.send(gi.lastError)
-        return
-    await chan.send(f"{ret}")
+    colMax = [max([len(i) for i in c]) for c in zip(*table)]
+    colMax[-1] = 0
+    ret = "```\n"
+    for row in table:
+        for i,col in enumerate(colMax):
+            ret += row[i].ljust(col+1)
+        ret += "\n"
+    ret += "```"
+    await chan.send(ret)
     
 @bot.event
 async def on_ready():
