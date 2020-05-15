@@ -68,7 +68,7 @@ async def clear(ctx):
 @bot.command()
 async def shuffle(ctx):
     """
-    Assine fishers to piers!
+    Assign fishers to piers!
     """
     player = ctx.author
     chan = ctx.channel
