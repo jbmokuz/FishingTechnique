@@ -1,14 +1,53 @@
 import discord, os
 from discord.ext import commands
 from functions import *
-import requests, sys
+import requests, sys, re
 import xml.etree.ElementTree as ET
+import copy
 
-TOKEN = os.environ["DISCORD_TOKEN"]
+if len(sys.argv) > 1:
+    TOKEN = os.environ["DISCORD_DEV_TOKEN"]
+else:
+    TOKEN = os.environ["DISCORD_TOKEN"]
+
 
 bot = commands.Bot("!")
 gi = GameInstance()
 
+"""
+@bot.command()
+async def ready(ctx):
+    
+    #Ready for a fishing toury!
+    
+
+    player = ctx.author
+    chan = ctx.channel
+
+    tenhou_name = re.findall("(\(.*\))",str(player.nick))
+    if tenhou_name != []:
+        tenhou_name = tenhou_name[0][1:-1]
+    else:
+        await chan.send(f"Please add your tenhou name to your nick in parentheses")
+        return
+    
+    await chan.send(f"{player.nick} {tenhou_name}")
+"""
+
+
+"""
+@bot.command()
+async def start(ctx, player1=None, player2=None, player3=None, player4=None):
+    
+    #Start fishing
+    #Args:
+    #    player1 player2 player3 player3
+    
+    
+    player = ctx.author
+    chan = ctx.channel
+"""
+    
 
 @bot.command()
 async def ping(ctx):
@@ -68,7 +107,7 @@ async def clear(ctx):
 @bot.command()
 async def shuffle(ctx):
     """
-    Assign fishers to piers!
+    Assign fishers to docks!
     """
     player = ctx.author
     chan = ctx.channel
@@ -77,11 +116,11 @@ async def shuffle(ctx):
 
     
     if tableD == {}:
-        await chan.send("Not piers could be made!")
+        await chan.send("Not docks could be made!")
     else:
         ret = ""
         for table in tableD:
-            ret += f"Pier {table}:\n"
+            ret += f"Dock {table}:\n"
             for player in tableD[table]:
                 ret += "  "+str(player)+"\n"
             ret += "\n"
@@ -108,7 +147,7 @@ async def list(ctx):
 
 
 @bot.command()
-async def score(ctx, log=None, rate="tensan"):
+async def score(ctx, log=None, rate="tensan", shugi=None):
     """
     Score a fishing log! (Results in cm)
     Args:
@@ -116,6 +155,8 @@ async def score(ctx, log=None, rate="tensan"):
             A full url or just the log id
         rate (optional):
             tensan(default), tengo, or tenpin
+        shugi (optional):
+            defaults to the rate shugi
     """
 
     
@@ -129,13 +170,23 @@ async def score(ctx, log=None, rate="tensan"):
     table = [["Score","","Pay","Name"]]
 
     rate = rate.lower()
-    if rate == "tensan" or rate == "0.3" or rate == ".3":
-        players = parseGame(log, TENSAN)
-    elif rate == "tengo" or rate == "0.5" or rate == ".5":
-        players = parseGame(log, TENGO)
-    elif rate == "tenpin" or rate == "1.0":
-        players = parseGame(log, TENPIN)
+    tableRate = None
     
+    if rate == "tensan" or rate == "0.3" or rate == ".3":
+        tableRate = copy.deepcopy(TENSAN)
+    elif rate == "tengo" or rate == "0.5" or rate == ".5":
+        tableRate = copy.deepcopy(TENGO)
+    elif rate == "tenpin" or rate == "1.0":
+        tableRate = copy.deepcopy(TENPIN)
+    else:
+        await chan.send(f"{rate} is not a valid rate (try !help score)")
+
+    if(shugi != None):
+        tableRate.shugi = round(float(shugi),3)
+        
+    players = parseGame(log, tableRate)
+
+        
     for p in players:
         score = str(p.score)
         shugi = str(p.shugi)
@@ -150,7 +201,8 @@ async def score(ctx, log=None, rate="tensan"):
 
     colMax = [max([len(i) for i in c]) for c in zip(*table)]
     colMax[-1] = 0
-    ret = "```\n"
+    
+    ret = f"```{tableRate}\n"
     for row in table:
         for i,col in enumerate(colMax):
             ret += row[i].ljust(col+1)
