@@ -37,12 +37,15 @@ async def ready(ctx):
 
 """
 @bot.command()
-async def start(ctx, player1=None, player2=None, player3=None, player4=None):
+async def start(ctx, p1=None, p2=None, p3=None, p4=None):
     
-    #Start fishing
-    #Args:
-    #    player1 player2 player3 player3
+    Start fishing
+    Args:
+        player1 player2 player3 player3
     
+
+    if (p1 == None or p2 == None or p3 == None or p4 == None):
+        
     
     player = ctx.author
     chan = ctx.channel
@@ -180,9 +183,14 @@ async def score(ctx, log=None, rate="tensan", shugi=None):
         tableRate = copy.deepcopy(TENPIN)
     else:
         await chan.send(f"{rate} is not a valid rate (try !help score)")
+        return
 
     if(shugi != None):
-        tableRate.shugi = round(float(shugi),3)
+        try:
+            tableRate.shugi = round(float(shugi),3)
+        except:
+            await chan.send(f"{shugi} is not a valid shugi")
+            return
         
     players = parseGame(log, tableRate)
 
