@@ -4,53 +4,51 @@ from functions import *
 import requests, sys, re
 import xml.etree.ElementTree as ET
 import copy
+import urllib
 
 if len(sys.argv) > 1:
     TOKEN = os.environ["DISCORD_DEV_TOKEN"]
+    ROOM_KEY = os.environ["TENHOU_DEV_KEY"]
 else:
     TOKEN = os.environ["DISCORD_TOKEN"]
+    ROOM_KEY = os.environ["TENHOU_KEY"]
 
 
 bot = commands.Bot("!")
 gi = GameInstance()
 
-"""
-@bot.command()
-async def ready(ctx):
-    
-    #Ready for a fishing toury!
-    
 
-    player = ctx.author
-    chan = ctx.channel
-
-    tenhou_name = re.findall("(\(.*\))",str(player.nick))
-    if tenhou_name != []:
-        tenhou_name = tenhou_name[0][1:-1]
-    else:
-        await chan.send(f"Please add your tenhou name to your nick in parentheses")
-        return
-    
-    await chan.send(f"{player.nick} {tenhou_name}")
-"""
-
-
-"""
 @bot.command()
 async def start(ctx, p1=None, p2=None, p3=None, p4=None):
-    
+    """
     Start fishing
     Args:
         player1 player2 player3 player3
-    
+    """
 
-    if (p1 == None or p2 == None or p3 == None or p4 == None):
-        
-    
     player = ctx.author
     chan = ctx.channel
-"""
-    
+
+    if (p1 == None or p2 == None or p3 == None or p4 == None):
+        await chan.send(f"Please specify 4 players space separated")
+        return
+
+    player_names = [p1,p2,p3,p4]
+    data = {
+        "L":ROOM_KEY,
+        "R2":"0209",
+        "RND":"default",
+        "WG":"1",
+        "M":"\r\n".join(player_names)
+    }
+    resp = requests.post('https://tenhou.net/cs/edit/start.cgi',data=data)
+    if resp.status_code != 200:
+        await chan.send(f"http error {resp.status_code} :<")
+        return
+    await chan.send(urllib.parse.unquote("&".join(resp.url.split("&")[1:])))
+
+
+
 
 @bot.command()
 async def ping(ctx):
