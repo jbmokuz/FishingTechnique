@@ -148,6 +148,20 @@ async def list(ctx):
 
 
 @bot.command()
+async def explain(ctx):
+    """
+    Explain how the last scoring was calculated
+    """
+
+    player = ctx.author
+    chan = ctx.channel
+
+    if(gi.lastScore == ""):
+        await chan.send("Nothing has been scored yet")
+        return
+    await player.send(gi.lastScore)
+    
+@bot.command()
 async def score(ctx, log=None, rate="tensan", shugi=None):
     """
     Score a fishing log! (Results in cm)
@@ -190,7 +204,7 @@ async def score(ctx, log=None, rate="tensan", shugi=None):
             await chan.send(f"{shugi} is not a valid shugi")
             return
         
-    players = parseGame(log, tableRate)
+    players = gi.parseGame(log, tableRate)
 
         
     for p in players:
