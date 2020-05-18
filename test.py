@@ -66,10 +66,10 @@ class TestGame(unittest.TestCase):
 class TestParse(unittest.TestCase):
     
     def setUp(self):
-        pass
+        self.gi = GameInstance()
 
     def testReport(self):
-        for p in parseGame("https://tenhou.net/0/?log=2020051311gm-0209-19713-a50611a9&tw=1", TENPIN):
+        for p in self.gi.parseGame("https://tenhou.net/0/?log=2020051311gm-0209-19713-a50611a9&tw=1", TENPIN):
             print(p)
 
 
