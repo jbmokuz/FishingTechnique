@@ -107,7 +107,7 @@ class GameInstance(metaclass=Singleton):
             self.lastScore += f"#{i+1}Place: ${tableRate.rate*tableRate.uma[i]}\n"
         
         self.lastScore += "\n"
-        self.lastScore += f"Finally the **Shugi Rate**[tableRate.shugi] is multiplied by the number of shugi and added to the final score\n"
+        self.lastScore += f"Finally the **Shugi Rate**[{tableRate.shugi}] is multiplied by the number of shugi and added to the final score\n"
         
         for i,p in enumerate(players):
             self.lastScore += f"#{i+1}Place: Shugi rate[{tableRate.shugi}] × Player Shugi[{p.shugi}] = {tableRate.shugi * p.shugi}\n"
