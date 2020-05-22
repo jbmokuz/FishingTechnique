@@ -50,18 +50,17 @@ async def start(ctx, p1=None, p2=None, p3=None, p4=None):
 
 
 
-@bot.command()
+@bot.command(aliases=['p'])
 async def ping(ctx):
     """
     Join a list to wait for fishing!
     """
-
     player = ctx.author
     chan = ctx.channel
     await chan.send(f"pong")
 
 
-@bot.command()
+@bot.command(aliases=['oi'])
 async def join(ctx):
     """
     Join a list to wait for fishing!
@@ -77,7 +76,7 @@ async def join(ctx):
     await chan.send(f"{player} joined the waiting to fish list!")
 
 
-@bot.command()
+@bot.command(aliases=['rm','remove'])
 async def leave(ctx):
     """
     Leave the waiting to fish list :(
@@ -228,6 +227,14 @@ async def score(ctx, log=None, rate="tensan", shugi=None):
             ret += row[i].ljust(col+1)
         ret += "\n"
     ret += "```"
+
+    for guild in bot.guilds:
+        for log_chan in guild.text_channels:
+            if str(log_chan) == "daily-log":
+                print("found")
+                await log_chan.send(log)
+                await log_chan.send(ret)
+    
     await chan.send(ret)
     
 @bot.event
