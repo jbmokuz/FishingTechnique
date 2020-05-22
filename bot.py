@@ -76,7 +76,7 @@ async def join(ctx):
     await chan.send(f"{player} joined the waiting to fish list!")
 
 
-@bot.command(aliases=['rm','remove'])
+@bot.command(aliases=['rm','remove','rme'])
 async def leave(ctx):
     """
     Leave the waiting to fish list :(
@@ -92,7 +92,7 @@ async def leave(ctx):
     await chan.send(f"{player} left the waiting to fish list!")
 
 
-@bot.command()
+@bot.command(aliases=['clearlist'])
 async def clear(ctx):
     """
     Clear waiting to fish list
@@ -127,7 +127,7 @@ async def shuffle(ctx):
         await chan.send(ret)
 
     
-@bot.command()
+@bot.command(aliases=["showlist"])
 async def list(ctx):
     """
     Show who is looking to fish!
