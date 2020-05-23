@@ -19,11 +19,11 @@ gi = GameInstance()
 
 
 @bot.command()
-async def start(ctx, p1=None, p2=None, p3=None, p4=None):
+async def start(ctx, p1=None, p2=None, p3=None, p4=None, randomSeat="true"):
     """
     Start fishing
     Args:
-        player1 player2 player3 player3
+        player1 player2 player3 player3 randomSeating=[true/false]
     """
 
     player = ctx.author
@@ -34,13 +34,20 @@ async def start(ctx, p1=None, p2=None, p3=None, p4=None):
         return
 
     player_names = [p1,p2,p3,p4]
+
     data = {
         "L":ROOM_KEY,
         "R2":"0209",
         "RND":"default",
-        "WG":"1",
-        "M":"\r\n".join(player_names)
-    }
+        "WG":"1"
+        }
+    
+    if randomSeat.lower() != "false" and randomSeat.lower() != "no":
+        random.shuffle(player_names)
+        data["RANDOMSTART"] = "on"
+        
+    data["M"] = "\r\n".join(player_names)
+
     resp = requests.post('https://tenhou.net/cs/edit/start.cgi',data=data)
     if resp.status_code != 200:
         await chan.send(f"http error {resp.status_code} :<")
@@ -234,7 +241,7 @@ async def score(ctx, log=None, rate="tensan", shugi=None):
                 print("found")
                 await log_chan.send(log)
                 await log_chan.send(ret)
-    
+
     await chan.send(ret)
     
 @bot.event
