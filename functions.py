@@ -149,17 +149,33 @@ class GameInstance(metaclass=Singleton):
         players[2].name = convertToName(type_tag.get('n2'))
         players[3].name = convertToName(type_tag.get('n3'))
 
+        owari = None
         for type_tag in root.findall('AGARI'):
             owari = type_tag.get("owari")
             if owari == None:
                 continue
-            owari = owari.split(",")
-            # @TODO check if there is shugi
-            if len(owari) >= 8:
-                owari += [0,0,0,0,0,0,0,0]
-            for i in range(0,4):
-                players[i].score = int(owari[i*2])*100
-                players[i].shugi = int(owari[i*2+8])
             break
+
+        if owari == None:
+            for type_tag in root.findall('RYUUKYOKU'):
+                owari = type_tag.get("owari")
+                if owari == None:
+                    continue
+                break
+
+        if owari == None:
+            self.lastError = f"Failed to parse :< Please complain to moku"
+            return None            
+            
+            
+        owari = owari.split(",")
+        # @TODO check if there is shugi
+
+        if len(owari) >= 8:
+            owari += [0,0,0,0,0,0,0,0]
+        for i in range(0,4):
+            players[i].score = int(owari[i*2])*100
+            players[i].shugi = int(owari[i*2+8])
+
 
         return self.scoreTable(players, rate)
